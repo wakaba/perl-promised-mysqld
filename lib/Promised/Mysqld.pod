@@ -1,0 +1,41 @@
+=head1 NAME
+
+Promised::Mysqld - MySQL server wrapper for testing
+
+=head1 SYNOPSIS
+
+XXX
+
+=head1 DESCRIPTION
+
+XXX
+
+=head1 METHODS
+
+=over 4
+
+XXX
+
+=back
+
+=head1 DEPENDENCY
+
+This module requires Perl 5.12 or later.
+
+The module requires L<Promise>
+<https://github.com/wakaba/perl-promise>, L<Promised::Command>
+<https://github.com/wakaba/perl-promised-command>, L<Promised::File>
+<https://github.com/wakaba/perl-promised-file>, and L<AnyEvent>.
+
+=head1 AUTHOR
+
+Wakaba <wakaba@uikawiki.org>.
+
+=head1 LICENSE
+
+Copyright 2015 Wakaba <wakaba@suikawiki.org>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

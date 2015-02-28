@@ -7,3 +7,6 @@
 [submodule "t_deps/modules/test-x1"]
 	path = t_deps/modules/test-x1
 	url = git://github.com/wakaba/perl-test-x1
+[submodule "modules/promised-file"]
+	path = modules/promised-file
+	url = git://github.com/wakaba/perl-promised-file
