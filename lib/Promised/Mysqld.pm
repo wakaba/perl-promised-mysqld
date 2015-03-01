@@ -180,7 +180,8 @@ sub stop ($) {
     if ($self->{db_dir_debug}) {
       AE::log alert => "Promised::Mysqld: Database directory was: $self->{db_dir}";
     } else {
-      return Promised::File->new_from_path ($self->{tempdir} || die)->remove_tree;
+      return Promised::File->new_from_path ($self->{tempdir})->remove_tree
+          if $self->{tempdir};
     }
   });
 } # stop
