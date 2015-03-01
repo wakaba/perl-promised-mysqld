@@ -188,6 +188,31 @@ sub stop ($) {
   });
 } # stop
 
+sub get_dsn_options ($) {
+  my $self = $_[0];
+  my $my_cnf = $self->my_cnf;
+  my %args;
+  $args{port} = $my_cnf->{port} if defined $my_cnf->{port};
+  if (defined $args{port}) {
+    $args{host} = $my_cnf->{'bind-address'} // '127.0.0.1';
+  } else {
+    $args{mysql_socket} = $self->{socket_file} if defined $self->{socket_file};
+  }
+  $args{user} ='root';
+  #$args{password}
+  $args{dbname} = 'mysql';
+  return \%args;
+} # get_dsn_options
+
+sub get_dsn_string ($;%) {
+  my ($self, %args) = @_;
+  my %opt = %{$self->get_dsn_options};
+  for (keys %args) {
+    $opt{$_} = $args{$_} if defined $args{$_};
+  }
+  return 'DBI:mysql:' . join ';', map { "$_=$opt{$_}" } sort { $a cmp $b } keys %opt;
+} # get_dsn_string
+
 sub DESTROY ($) {
   my $cmd = $_[0]->{cmd};
   if (defined $cmd and $cmd->running and

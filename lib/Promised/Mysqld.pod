@@ -91,6 +91,29 @@ server becomes ready to accept queries.
 
 This method must be invoked before the C<start> method is invoked.
 
+=item $hashref = $mysqld->get_dsn_options
+
+Return a hash reference, which contains name/value pairs that can be
+use to construct the options component of the DSN string for the
+L<DBI> (L<DBD::mysql>) module used to connect to the database.  Note
+that the C<dbname> option is set to C<mysql>, which is the only
+database in the server when the server is created without no initial
+data.
+
+This method must be invoked after the C<start>'s promise is resolved.
+
+=item $dsn = $mysqld->get_dsn_string (NAME => VALUE, ...)
+
+Return a DSN string which can be use to connect to the database using
+the L<DBI> (L<DBD::mysql>) module.  By default the C<dbname> option is
+set to C<mysql>, which is the only database in the server when the
+server is created without no initial data.  This can be replaced by
+specifying the C<dbname> named argument to the method.  Likewise,
+other options such as C<user> and C<password> can also be specified as
+named arguments.
+
+This method must be invoked after the C<start>'s promise is resolved.
+
 =back
 
 During the MySQL server is running, signal handlers for C<SIGINT>,
