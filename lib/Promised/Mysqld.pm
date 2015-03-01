@@ -151,8 +151,12 @@ sub start ($) {
       my $interval = 0.5;
       my $timer; $timer = AE::timer 0, $interval, sub {
         if ($self->{cmd}->running) {
-          Promised::File->new_from_path ($self->{pid_file})->is_file->then (sub {
-            if ($_[0]) {
+          my @chk;
+          push @chk, Promised::File->new_from_path ($self->{pid_file})->is_file;
+          push @chk, Promised::File->new_from_path ($self->{socket_file})->stat->then (sub { -s $_[0] }, sub { 0 })
+              if length $self->{socket_file};
+          Promise->all (\@chk)->then (sub {
+            unless (grep { not $_ } @{$_[0]}) {
               $ok->();
               undef $timer;
             } else {

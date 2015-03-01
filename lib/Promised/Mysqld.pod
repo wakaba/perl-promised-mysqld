@@ -4,7 +4,14 @@ Promised::Mysqld - MySQL server wrapper for testing
 
 =head1 SYNOPSIS
 
-XXX
+  use Promised::Mysqld;
+  $mysqld = Promised::Mysqld->new;
+  $mysqld->start->then (sub {
+    ...;
+    return $mysqld->stop;
+  })->then (sub {
+    warn "done";
+  });
 
 =head1 DESCRIPTION
 
@@ -15,6 +22,20 @@ XXX
 =over 4
 
 XXX
+
+=item $promise = $mysqld->start
+
+Return a L<Promise>, which is resolved after the MySQL server is ready
+to accept queries.  The promise is rejected if the server failed to
+start.
+
+=item $promise = $mysqld->stop
+
+Returna L<Promise>, which is resolved after the MySQL server is
+shutdown.
+
+This method must be invoked after the C<start> method is invoked.  It
+can be invoked even when the C<start>'s promise is rejected.
 
 =back
 
