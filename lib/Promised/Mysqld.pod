@@ -113,6 +113,13 @@ The module requires L<Promise>
 
 Wakaba <wakaba@uikawiki.org>.
 
+=head1 ACKNOWLEDGEMENTS
+
+This module is inspired by L<Test::mysqld>
+<https://github.com/kazuho/p5-test-mysqld> and
+L<Test::MySQL::CreateDatabase>
+<https://github.com/wakaba/perl-rdb-utils/tree/master/lib/Test/MySQL>.
+
 =head1 LICENSE
 
 Copyright 2015 Wakaba <wakaba@suikawiki.org>.
