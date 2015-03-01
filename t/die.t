@@ -87,7 +87,7 @@ for my $signal (qw(INT TERM QUIT)) {
         };
       });
     })->then (sub {
-      return $cmd->send_signal ('INT');
+      return $cmd->send_signal ($signal);
     })->then (sub {
       return $cmd->wait->catch (sub { });
     })->then (sub {
