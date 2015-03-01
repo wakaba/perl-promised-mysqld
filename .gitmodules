@@ -14,3 +14,6 @@
 	path = modules/promised-file
 	url = git://github.com/wakaba/perl-promised-file
 	track = master
+[submodule "modules/anyevent-mysql-client"]
+	path = modules/anyevent-mysql-client
+	url = git://github.com/wakaba/perl-anyevent-mysql-client

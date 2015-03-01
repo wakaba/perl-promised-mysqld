@@ -178,7 +178,14 @@ sub stop ($) {
   my $self = $_[0];
   my $cmd = $self->{cmd};
   return Promise->reject ("Not yet started") unless defined $cmd;
-  return $cmd->send_signal ('TERM')->then (sub { return $cmd->wait })->then (sub {
+  return Promise->all ([map {
+    my $key = $_;
+    $self->{client}->{$key}->disconnect->then (sub {
+      delete $self->{client}->{$key};
+    });
+  } keys %{$self->{client} or {}}])->then (sub {
+    return $cmd->send_signal ('TERM');
+  })->then (sub { return $cmd->wait })->then (sub {
     if ($self->{db_dir_debug}) {
       AE::log alert => "Promised::Mysqld: Database directory was: $self->{db_dir}";
     } else {
@@ -212,6 +219,33 @@ sub get_dsn_string ($;%) {
   }
   return 'DBI:mysql:' . join ';', map { "$_=$opt{$_}" } sort { $a cmp $b } keys %opt;
 } # get_dsn_string
+
+sub client_connect ($;%) {
+  my ($self, %args) = @_;
+  my $dbname = $args{dbname} // 'mysql';
+  return Promise->resolve ($self->{client}->{$dbname})
+      if defined $self->{client}->{$dbname};
+  my $dsn = $self->get_dsn_options;
+  return Promise->new (sub {
+    my ($ok, $ng) = @_;
+    require AnyEvent::MySQL::Client;
+    $self->{client}->{$dbname} = my $client = AnyEvent::MySQL::Client->new;
+    my %connect;
+    if (defined $dsn->{port}) {
+      $connect{hostname} = $dsn->{host};
+      $connect{port} = $dsn->{port};
+    } else {
+      $connect{hostname} = 'unix/';
+      $connect{port} = $dsn->{mysql_socket};
+    }
+    $ok->($client->connect (
+      %connect,
+      username => $dsn->{user},
+      password => $dsn->{password},
+      database => $dbname,
+    )->then (sub { return $client }));
+  });
+} # client_connect
 
 sub DESTROY ($) {
   my $cmd = $_[0]->{cmd};

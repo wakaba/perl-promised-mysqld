@@ -97,7 +97,7 @@ Return a hash reference, which contains name/value pairs that can be
 use to construct the options component of the DSN string for the
 L<DBI> (L<DBD::mysql>) module used to connect to the database.  Note
 that the C<dbname> option is set to C<mysql>, which is the only
-database in the server when the server is created without no initial
+database in the server when the server is created with no initial
 data.
 
 This method must be invoked after the C<start>'s promise is resolved.
@@ -107,12 +107,28 @@ This method must be invoked after the C<start>'s promise is resolved.
 Return a DSN string which can be use to connect to the database using
 the L<DBI> (L<DBD::mysql>) module.  By default the C<dbname> option is
 set to C<mysql>, which is the only database in the server when the
-server is created without no initial data.  This can be replaced by
+server is created with no initial data.  This can be replaced by
 specifying the C<dbname> named argument to the method.  Likewise,
 other options such as C<user> and C<password> can also be specified as
 named arguments.
 
 This method must be invoked after the C<start>'s promise is resolved.
+
+=item $mysqld->client_connect (NAME => VALUE, ...)->then (sub { $client = shift })
+
+Return a L<Promise>, which is resolved with an
+L<AnyEvent::MySQL::Client> object which is connected to the database.
+By default it is connected to the C<mysql> database, which is the only
+database in the server when the server is created with no initial
+data.  This can be changed by specifying the C<dbname> named argument
+to the method.
+
+This method must be invoked after the C<start>'s promise is resolved.
+The C<disconnect> method of the client object does not have to be
+explicitly invoked, as the C<stop> method will invoke the method
+before shutting down the MySQL server.
+
+This method requires L<AnyEvent::MySQL::Client> module.
 
 =back
 
@@ -131,6 +147,10 @@ The module requires L<Promise>
 <https://github.com/wakaba/perl-promise>, L<Promised::Command>
 <https://github.com/wakaba/perl-promised-command>, L<Promised::File>
 <https://github.com/wakaba/perl-promised-file>, and L<AnyEvent>.
+
+As described in the earlier section, some methods require
+L<AnyEvent::MySQL::Client>
+<https://github.com/wakaba/perl-anyevent-mysql-client>.
 
 =head1 AUTHOR
 
