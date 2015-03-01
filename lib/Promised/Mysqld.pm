@@ -229,6 +229,7 @@ sub client_connect ($;%) {
   return Promise->new (sub {
     my ($ok, $ng) = @_;
     require AnyEvent::MySQL::Client;
+    require AnyEvent::MySQL::Client::ShowLog if $ENV{SQL_DEBUG};
     $self->{client}->{$dbname} = my $client = AnyEvent::MySQL::Client->new;
     my %connect;
     if (defined $dsn->{port}) {
@@ -246,6 +247,28 @@ sub client_connect ($;%) {
     )->then (sub { return $client }));
   });
 } # client_connect
+
+sub create_db_and_execute_sqls ($$$) {
+  my ($self, $dbname, $sqls) = @_;
+  return $self->client_connect->then (sub {
+    my $client_mysql = $_[0];
+    my $escaped = $dbname;
+    $escaped =~ s/`/``/g;
+    return $client_mysql->query ("CREATE DATABASE IF NOT EXISTS `$escaped`");
+  })->then (sub {
+    return $self->client_connect (dbname => $dbname);
+  })->then (sub {
+    my $client = $_[0];
+    my $p = Promise->resolve;
+    for my $sql (@$sqls) {
+      $p = $p->then (sub {
+        die $_[0] if defined $_[0] and not $_[0]->is_success;
+        return $client->query ($sql);
+      });
+    }
+    return $p;
+  });
+} # create_db_and_execute_sqls
 
 sub DESTROY ($) {
   my $cmd = $_[0]->{cmd};

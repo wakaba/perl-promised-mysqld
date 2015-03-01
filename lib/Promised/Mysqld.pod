@@ -130,6 +130,24 @@ before shutting down the MySQL server.
 
 This method requires L<AnyEvent::MySQL::Client> module.
 
+=item $promise = $mysqld->create_db_and_execute_sqls ($dbname, [$sql, $sql, ...])
+
+Return a L<Promise>, which is resolved after SQL statements specified
+by the arguments are executed on the database.  The promise is
+rejected if the execution is failed.
+
+The first argument must be the database name.  If there is no database
+with the specified name, a new database is created (by an SQL C<CREATE
+DATABASE> statement).
+
+The second argument must be an array reference of zero or more
+strings, which are sent to the MySQL server as SQL statements, in
+order.
+
+This method must be invoked after the C<start>'s promise is resolved.
+
+This method requires L<AnyEvent::MySQL::Client> module.
+
 =back
 
 During the MySQL server is running, signal handlers for C<SIGINT>,
