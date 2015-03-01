@@ -93,6 +93,13 @@ This method must be invoked before the C<start> method is invoked.
 
 =back
 
+During the MySQL server is running, signal handlers for C<SIGINT>,
+C<SIGTERM>, and C<SIGQUIT> are installed such that these signal will
+terminate the server.  If your application want to handle these
+signals in other ways (e.g. terminating entire your application),
+another signal handlers should also be installed using L<AnyEvent> API
+(or equivalent).
+
 =head1 DEPENDENCY
 
 This module requires Perl 5.12 or later.

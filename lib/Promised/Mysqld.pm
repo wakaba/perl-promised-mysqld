@@ -88,7 +88,7 @@ sub start_timeout ($;$) {
   if (@_ > 1) {
     $_[0]->{start_timeout} = $_[1];
   }
-  return $_[0]->{start_timeout} || 10;
+  return $_[0]->{start_timeout} || 30;
 } # start_timeout
 
 sub _create_mysql_db ($) {
@@ -111,6 +111,7 @@ sub start ($) {
   return Promise->new (sub {
     die "mysqld already started" if defined $self->{cmd};
 
+    $self->{start_pid} = $$;
     $self->{db_dir_debug} = $ENV{PROMISED_MYSQLD_DEBUG};
     $self->_find_mysql or die "|mysqld| and/or |mysql_install_db| not found";
     my $db_dir = defined $self->{db_dir} ? $self->{db_dir} : do {
@@ -131,6 +132,7 @@ sub start ($) {
         ([$self->{mysqld},
           '--defaults-file=' . $self->{my_cnf_file},
           '--user=' . $self->{mysqld_user}]);
+    $self->{cmd}->propagate_signal (['TERM', 'QUIT', ['INT' => 'TERM']]);
     
     $_[0]->($self->_create_my_cnf);
   })->then (sub {
@@ -185,6 +187,14 @@ sub stop ($) {
     }
   });
 } # stop
+
+sub DESTROY ($) {
+  my $cmd = $_[0]->{cmd};
+  if (defined $cmd and $cmd->running and
+      defined $_[0]->{start_pid} and $_[0]->{start_pid} == $$) {
+    $cmd->send_signal ('TERM');
+  }
+} # DESTROY
 
 1;
 
