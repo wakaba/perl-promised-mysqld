@@ -15,13 +15,19 @@ Promised::Mysqld - MySQL server wrapper for testing
 
 =head1 DESCRIPTION
 
-XXX
+The C<Promised::Mysqld> class provides a L<Promise>-aware interface to
+start and stop C<mysqld> process, for the purpose of development and
+testing.
 
 =head1 METHODS
 
+Following methods are available:
+
 =over 4
 
-XXX
+=item $mysqld = Promised::Mysqld->new
+
+Create a new instance.
 
 =item $promise = $mysqld->start
 
@@ -31,11 +37,59 @@ start.
 
 =item $promise = $mysqld->stop
 
-Returna L<Promise>, which is resolved after the MySQL server is
+Return a L<Promise>, which is resolved after the MySQL server is
 shutdown.
 
 This method must be invoked after the C<start> method is invoked.  It
 can be invoked even when the C<start>'s promise is rejected.
+
+=item $mysqld->set_mysqld_and_mysql_install_db ($mysqld, $mysql_install_db)
+
+Set the paths to the C<mysqld> and C<mysql_install_db> commands.
+
+This method must be invoked before the C<start> method is invoked.  If
+not invoked, directories in C<PATH> and well-known locations are used
+to find these commands.
+
+=item $mysqld->set_db_dir ($path)
+
+Set the path to the directory used to create files for the MySQL
+server.  It can be an existing database directory, an empty directory,
+or a path to directory that does not exist yet.  Please note that any
+existing file in the directory, especially C<etc/my.cnf>, can be
+modified by the module and/or C<mysqld>.
+
+This method must be invoked before the C<start> method is invoked.  If
+not invoked, a temporary directory is created and used.  The temporary
+directory is removed after the MySQL server is shutdown, unless the
+C<PROMISED_MYSQLD_DEBUG> environment variable is set to a true value.
+
+=item $hashref = $mysqld->my_cnf
+
+Return a hash reference, which is used to generate the C<my.cnf>
+configuration file for the C<mysqld> process.
+
+The hash can contain zero or more name/value character string pairs,
+which is used as name/value pairs in the generated C<my.cnf> file.  If
+the value is the empty string or C<undef>, only the name is inserted
+in the file.
+
+Some of name/value pairs are set by default (or to be set implicitly
+when the C<start> method is invoked).  Unless otherwise specified, the
+C<mysqld> process is configured such that any file read or written
+(including database files) is located within the directory specified
+by the C<db_dir> method and that no TCP/IP port is listen but a Unix
+domain socket is created in the C<db_dir>'s directory.
+
+=item $time = $mysqld->start_timeout
+
+=item $mysqld->start_timeout ($time)
+
+Get or set the timeout for the C<start>, i.e. the maximum time
+interval between the invocation of the C<mysqld> command and when the
+server becomes ready to accept queries.
+
+This method must be invoked before the C<start> method is invoked.
 
 =back
 

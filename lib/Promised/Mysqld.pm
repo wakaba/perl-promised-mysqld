@@ -41,29 +41,21 @@ sub _find_mysql ($) {
   return 0;
 } # _find_mysql
 
-sub mysqld ($$) {
-  if (@_ > 1) {
-    $_[0]->{mysqld} = $_[1];
-  }
-  die "Not implemented" if defined wantarray;
-} # mysqld
+sub set_mysqld_and_mysql_install_db ($$$) {
+  $_[0]->{mysqld} = $_[1] // die "|mysqld| is not specified";
+  $_[0]->{mysql_install_db} = $_[2] // die "|mysql_install_db| is not specified";
+} # set_msqld_and_mysql_install_db
 
-sub mysql_install_db ($$) {
-  if (@_ > 1) {
-    $_[0]->{mysql_install_db} = $_[1];
-  }
-  die "Not implemented" if defined wantarray;
-} # mysql_install_db
-
-sub db_dir ($;$) {
-  if (@_ > 1) {
-    $_[0]->{db_dir} = $_[1];
-  }
-  die "Not implemented" if defined wantarray;
-} # db_dir
+sub set_db_dir ($$) {
+  $_[0]->{db_dir} = $_[1];
+} # set_db_dir
 
 sub my_cnf ($) {
-  return $_[0]->{my_cnf} ||= {};
+  return $_[0]->{my_cnf} ||= {
+    'skip-networking' => '',
+    'innodb_lock_wait_timeout' => 2,
+    'max_connections' => 1000,
+  };
 } # my_cnf
 
 sub _create_my_cnf ($) {
@@ -119,9 +111,10 @@ sub start ($) {
   return Promise->new (sub {
     die "mysqld already started" if defined $self->{cmd};
 
+    $self->{db_dir_debug} = $ENV{PROMISED_MYSQLD_DEBUG};
     $self->_find_mysql or die "|mysqld| and/or |mysql_install_db| not found";
     my $db_dir = defined $self->{db_dir} ? $self->{db_dir} : do {
-      $self->{tempdir} = File::Temp->newdir (CLEANUP => !$ENV{PROMISED_MYSQLD_DEBUG});
+      $self->{tempdir} = File::Temp->newdir (CLEANUP => !$self->{db_dir_debug});
       ''.$self->{tempdir};
     };
     $db_dir = abs_path ($db_dir);
@@ -129,7 +122,7 @@ sub start ($) {
     $self->{my_cnf_file} = "$db_dir/etc/my.cnf";
     $self->{mysqld_user} = getpwuid $>;
 
-    if ($ENV{PROMISED_MYSQLD_DEBUG}) {
+    if ($self->{db_dir_debug}) {
       AE::log alert => "Promised::Mysqld: Database directory is: $self->{db_dir}";
     }
     
@@ -153,7 +146,7 @@ sub start ($) {
         if ($self->{cmd}->running) {
           my @chk;
           push @chk, Promised::File->new_from_path ($self->{pid_file})->is_file;
-          push @chk, Promised::File->new_from_path ($self->{socket_file})->stat->then (sub { -s $_[0] }, sub { 0 })
+          push @chk, Promised::File->new_from_path ($self->{socket_file})->stat->then (sub { -S $_[0] }, sub { 0 })
               if length $self->{socket_file};
           Promise->all (\@chk)->then (sub {
             unless (grep { not $_ } @{$_[0]}) {
@@ -172,7 +165,10 @@ sub start ($) {
           undef $timer;
         }
       };
-    })->catch (sub { return $self->{cmd}->wait });
+    })->catch (sub {
+      my $error = $_[0];
+      return $self->{cmd}->wait->then (sub { die $error });
+    });
   });
 } # start
 
@@ -181,10 +177,10 @@ sub stop ($) {
   my $cmd = $self->{cmd};
   return Promise->reject ("Not yet started") unless defined $cmd;
   return $cmd->send_signal ('TERM')->then (sub { return $cmd->wait })->then (sub {
-    if ($ENV{PROMISED_MYSQLD_DEBUG}) {
+    if ($self->{db_dir_debug}) {
       AE::log alert => "Promised::Mysqld: Database directory was: $self->{db_dir}";
     } else {
-      delete $self->{tempdir};
+      return Promised::File->new_from_path ($self->{tempdir} || die)->remove_tree;
     }
   });
 } # stop
