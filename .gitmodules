@@ -1,12 +1,16 @@
 [submodule "modules/promise"]
 	path = modules/promise
 	url = git://github.com/wakaba/perl-promise
+	track = master
 [submodule "modules/promised-command"]
 	path = modules/promised-command
 	url = git://github.com/wakaba/perl-promised-command
+	track = master
 [submodule "t_deps/modules/test-x1"]
 	path = t_deps/modules/test-x1
 	url = git://github.com/wakaba/perl-test-x1
+	track = master
 [submodule "modules/promised-file"]
 	path = modules/promised-file
 	url = git://github.com/wakaba/perl-promised-file
+	track = master
