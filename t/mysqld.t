@@ -100,7 +100,7 @@ test {
         ok not $result;
       } $c;
     });
-  })->then (sub {
+  }, sub { test { ok 0 } $c; warn $_[0] } )->then (sub {
     done $c;
     undef $c;
   });
@@ -129,6 +129,18 @@ test {
     undef $c;
   });
 } n => 2, name => 'debug - db_dir not removed';
+
+test {
+  my $c = shift;
+  my $mysqld = Promised::Mysqld->new;
+  $mysqld->stop->then (sub {
+    test {
+      ok 1;
+    } $c;
+    done $c;
+    undef $c;
+  });
+} n => 1, name => 'stop before start';
 
 run_tests;
 

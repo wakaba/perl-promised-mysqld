@@ -7,6 +7,7 @@ use File::Temp;
 use AnyEvent;
 use Promise;
 use Promised::Command;
+use Promised::Command::Signals;
 use Promised::File;
 
 sub new ($) {
@@ -132,7 +133,9 @@ sub start ($) {
         ([$self->{mysqld},
           '--defaults-file=' . $self->{my_cnf_file},
           '--user=' . $self->{mysqld_user}]);
-    $self->{cmd}->propagate_signal (['TERM', 'QUIT', ['INT' => 'TERM']]);
+    my $stop_code = sub { return $self->stop };
+    $self->{signals}->{$_} = Promised::Command::Signals->add_handler
+        ($_ =>$stop_code) for qw(TERM QUIT INT);
     
     $_[0]->($self->_create_my_cnf);
   })->then (sub {
@@ -169,7 +172,7 @@ sub start ($) {
       };
     })->catch (sub {
       my $error = $_[0];
-      return $self->{cmd}->wait->then (sub { die $error });
+      return $self->{cmd}->wait->then (sub { delete $self->{cmd}; die $error });
     });
   });
 } # start
@@ -177,7 +180,7 @@ sub start ($) {
 sub stop ($) {
   my $self = $_[0];
   my $cmd = $self->{cmd};
-  return Promise->reject ("Not yet started") unless defined $cmd;
+  return Promise->resolve unless defined $cmd;
   return Promise->all ([map {
     my $key = $_;
     $self->{client}->{$key}->disconnect->then (sub {
@@ -186,12 +189,15 @@ sub stop ($) {
   } keys %{$self->{client} or {}}])->then (sub {
     return $cmd->send_signal ('TERM');
   })->then (sub { return $cmd->wait })->then (sub {
+    delete $self->{cmd};
+    delete $self->{signals};
     if ($self->{db_dir_debug}) {
       AE::log alert => "Promised::Mysqld: Database directory was: $self->{db_dir}";
     } else {
       return Promised::File->new_from_path ($self->{tempdir})->remove_tree
           if $self->{tempdir};
     }
+    return;
   });
 } # stop
 

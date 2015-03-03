@@ -150,12 +150,13 @@ This method requires L<AnyEvent::MySQL::Client> module.
 
 =back
 
-During the MySQL server is running, signal handlers for C<SIGINT>,
+During the server is running, signal handlers for C<SIGINT>,
 C<SIGTERM>, and C<SIGQUIT> are installed such that these signal will
-terminate the server.  If your application want to handle these
-signals in other ways (e.g. terminating entire your application),
-another signal handlers should also be installed using L<AnyEvent> API
-(or equivalent).
+terminate the server (and the current script).  If the script wants to
+handle signal in other ways, the handling should be specified using
+the L<Promised::Command::Signals> API from
+<https://github.com/wakaba/perl-promised-command> to avoid
+confliction.
 
 =head1 DEPENDENCY
 
