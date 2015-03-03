@@ -135,7 +135,8 @@ sub start ($) {
           '--user=' . $self->{mysqld_user}]);
     my $stop_code = sub { return $self->stop };
     $self->{signals}->{$_} = Promised::Command::Signals->add_handler
-        ($_ =>$stop_code) for qw(TERM QUIT INT);
+        ($_ => $stop_code) for qw(TERM QUIT INT);
+    $self->{cmd}->signal_before_destruction ('TERM');
     
     $_[0]->($self->_create_my_cnf);
   })->then (sub {

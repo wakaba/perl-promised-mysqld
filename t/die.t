@@ -48,6 +48,48 @@ test {
   });
 } n => 2;
 
+test {
+  my $c = shift;
+  my $cmd = Promised::Command->new (['perl', '-e', q{
+    use AnyEvent;
+    use Promised::Mysqld;
+    our $mysqld = Promised::Mysqld->new;
+    my $cv = AE::cv;
+    $mysqld->start->then (sub {
+      warn "\npid=@{[$mysqld->{cmd}->pid]}\n";
+      $cv->send;
+    }, sub {
+      exit 1;
+    });
+    $cv->recv;
+  }]);
+  $cmd->stderr (\my $stderr);
+  $cmd->run->then (sub {
+    return $cmd->wait->then (sub {
+      my $run = $_[0];
+      test {
+        is $run->exit_code, 0;
+      } $c;
+      return Promise->new (sub {
+        my ($ok, $ng) = @_;
+        my $timer; $timer = AE::timer 0.5, 0, sub {
+          $ok->();
+          undef $timer;
+        };
+      });
+    });
+  })->then (sub {
+    $stderr =~ /\npid=([0-9]+)\n/;
+    my $pid = $1;
+    test {
+      ok not kill 0, $pid;
+    } $c;
+  })->then (sub {
+    done $c;
+    undef $c;
+  });
+} n => 2;
+
 for my $signal (qw(INT TERM QUIT)) {
   test {
     my $c = shift;
