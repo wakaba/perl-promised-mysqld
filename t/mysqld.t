@@ -132,6 +132,34 @@ test {
 
 test {
   my $c = shift;
+  my $s = Promised::Mysqld->new;
+  my $db_dir = path (__FILE__)->parent->parent->child ('local/test/test-db-dir' . $$ . rand);
+  $s->set_db_dir ($db_dir);
+  $s->start->then (sub {
+    test {
+      ok 1;
+    } $c;
+    return $s->stop;
+  }, sub { test { ok 0 } $c })->then (sub {
+    my $dir = Promised::File->new_from_path ($s->{db_dir} || die);
+    test {
+      is path ($s->{db_dir})->absolute, $db_dir->absolute;
+    } $c;
+    return $dir->is_directory->then (sub {
+      my $result = $_[0];
+      test {
+        ok $result;
+      } $c;
+      return $dir->remove_tree if $result;
+    });
+  })->then (sub {
+    done $c;
+    undef $c;
+  });
+} n => 3, name => 'set_db_dir';
+
+test {
+  my $c = shift;
   my $mysqld = Promised::Mysqld->new;
   $mysqld->stop->then (sub {
     test {
