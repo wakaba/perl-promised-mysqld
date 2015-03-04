@@ -172,6 +172,9 @@ As described in the earlier section, some methods require
 L<AnyEvent::MySQL::Client>
 <https://github.com/wakaba/perl-anyevent-mysql-client>.
 
+It also requires MySQL version 5 (C<mysqld> and C<mysql_install_db>
+commands).
+
 =head1 AUTHOR
 
 Wakaba <wakaba@uikawiki.org>.
