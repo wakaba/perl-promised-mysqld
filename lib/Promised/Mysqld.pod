@@ -1,6 +1,6 @@
 =head1 NAME
 
-Promised::Mysqld - MySQL server wrapper for testing
+Promised::Mysqld - MySQL server wrapper for development and testing
 
 =head1 SYNOPSIS
 
@@ -17,7 +17,8 @@ Promised::Mysqld - MySQL server wrapper for testing
 
 The C<Promised::Mysqld> class provides a L<Promise>-aware interface to
 start and stop C<mysqld> process, for the purpose of development and
-testing.
+testing.  It creates a temporary database and start the MySQL server
+using it.
 
 =head1 METHODS
 
@@ -91,7 +92,72 @@ server becomes ready to accept queries.
 
 This method must be invoked before the C<start> method is invoked.
 
+=item $hashref = $mysqld->get_dsn_options
+
+Return a hash reference, which contains name/value pairs that can be
+use to construct the options component of the DSN string for the
+L<DBI> (L<DBD::mysql>) module used to connect to the database.  Note
+that the C<dbname> option is set to C<mysql>, which is the only
+database in the server when the server is created with no initial
+data.
+
+This method must be invoked after the C<start>'s promise is resolved.
+
+=item $dsn = $mysqld->get_dsn_string (NAME => VALUE, ...)
+
+Return a DSN string which can be use to connect to the database using
+the L<DBI> (L<DBD::mysql>) module.  By default the C<dbname> option is
+set to C<mysql>, which is the only database in the server when the
+server is created with no initial data.  This can be replaced by
+specifying the C<dbname> named argument to the method.  Likewise,
+other options such as C<user> and C<password> can also be specified as
+named arguments.
+
+This method must be invoked after the C<start>'s promise is resolved.
+
+=item $mysqld->client_connect (NAME => VALUE, ...)->then (sub { $client = shift })
+
+Return a L<Promise>, which is resolved with an
+L<AnyEvent::MySQL::Client> object which is connected to the database.
+By default it is connected to the C<mysql> database, which is the only
+database in the server when the server is created with no initial
+data.  This can be changed by specifying the C<dbname> named argument
+to the method.
+
+This method must be invoked after the C<start>'s promise is resolved.
+The C<disconnect> method of the client object does not have to be
+explicitly invoked, as the C<stop> method will invoke the method
+before shutting down the MySQL server.
+
+This method requires L<AnyEvent::MySQL::Client> module.
+
+=item $promise = $mysqld->create_db_and_execute_sqls ($dbname, [$sql, $sql, ...])
+
+Return a L<Promise>, which is resolved after SQL statements specified
+by the arguments are executed on the database.  The promise is
+rejected if the execution is failed.
+
+The first argument must be the database name.  If there is no database
+with the specified name, a new database is created (by an SQL C<CREATE
+DATABASE> statement).
+
+The second argument must be an array reference of zero or more
+strings, which are sent to the MySQL server as SQL statements, in
+order.
+
+This method must be invoked after the C<start>'s promise is resolved.
+
+This method requires L<AnyEvent::MySQL::Client> module.
+
 =back
+
+During the server is running, signal handlers for C<SIGINT>,
+C<SIGTERM>, and C<SIGQUIT> are installed such that these signal will
+terminate the server (and the current script).  If the script wants to
+handle signal in other ways, the handling should be specified using
+the L<Promised::Command::Signals> API from
+<https://github.com/wakaba/perl-promised-command> to avoid
+confliction.
 
 =head1 DEPENDENCY
 
@@ -102,9 +168,23 @@ The module requires L<Promise>
 <https://github.com/wakaba/perl-promised-command>, L<Promised::File>
 <https://github.com/wakaba/perl-promised-file>, and L<AnyEvent>.
 
+As described in the earlier section, some methods require
+L<AnyEvent::MySQL::Client>
+<https://github.com/wakaba/perl-anyevent-mysql-client>.
+
+It also requires MySQL version 5 (C<mysqld> and C<mysql_install_db>
+commands).
+
 =head1 AUTHOR
 
 Wakaba <wakaba@uikawiki.org>.
+
+=head1 ACKNOWLEDGEMENTS
+
+This module is inspired by L<Test::mysqld>
+<https://github.com/kazuho/p5-test-mysqld> and
+L<Test::MySQL::CreateDatabase>
+<https://github.com/wakaba/perl-rdb-utils/tree/master/lib/Test/MySQL>.
 
 =head1 LICENSE
 

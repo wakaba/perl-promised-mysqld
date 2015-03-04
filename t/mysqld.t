@@ -13,14 +13,22 @@ test {
   my $s = Promised::Mysqld->new;
   $s->start->then (sub {
     test {
-      ok 1;
+      my $opts = $s->get_dsn_options;
+      is $opts->{host}, undef;
+      is $opts->{port}, undef;
+      ok -S $opts->{mysql_socket};
+      is $opts->{user}, 'root';
+      is $opts->{password}, undef;
+      is $opts->{dbname}, 'mysql';
+      is $s->get_dsn_string, "DBI:mysql:dbname=mysql;mysql_socket=$opts->{mysql_socket};user=root";
+      is $s->get_dsn_string (dbname => 'myapp', user => 'foo', password => 'bar'), "DBI:mysql:dbname=myapp;mysql_socket=$opts->{mysql_socket};password=bar;user=foo";
     } $c;
     return $s->stop;
   }, sub { test { ok 0 } $c })->then (sub {
     done $c;
     undef $c;
   });
-} n => 1, name => 'start and stop';
+} n => 8, name => 'start and stop';
 
 test {
   my $c = shift;
@@ -92,7 +100,7 @@ test {
         ok not $result;
       } $c;
     });
-  })->then (sub {
+  }, sub { test { ok 0 } $c; warn $_[0] } )->then (sub {
     done $c;
     undef $c;
   });
@@ -121,6 +129,18 @@ test {
     undef $c;
   });
 } n => 2, name => 'debug - db_dir not removed';
+
+test {
+  my $c = shift;
+  my $mysqld = Promised::Mysqld->new;
+  $mysqld->stop->then (sub {
+    test {
+      ok 1;
+    } $c;
+    done $c;
+    undef $c;
+  });
+} n => 1, name => 'stop before start';
 
 run_tests;
 

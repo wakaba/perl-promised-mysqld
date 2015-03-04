@@ -7,6 +7,7 @@ use File::Temp;
 use AnyEvent;
 use Promise;
 use Promised::Command;
+use Promised::Command::Signals;
 use Promised::File;
 
 sub new ($) {
@@ -88,7 +89,7 @@ sub start_timeout ($;$) {
   if (@_ > 1) {
     $_[0]->{start_timeout} = $_[1];
   }
-  return $_[0]->{start_timeout} || 10;
+  return $_[0]->{start_timeout} || 30;
 } # start_timeout
 
 sub _create_mysql_db ($) {
@@ -111,6 +112,7 @@ sub start ($) {
   return Promise->new (sub {
     die "mysqld already started" if defined $self->{cmd};
 
+    $self->{start_pid} = $$;
     $self->{db_dir_debug} = $ENV{PROMISED_MYSQLD_DEBUG};
     $self->_find_mysql or die "|mysqld| and/or |mysql_install_db| not found";
     my $db_dir = defined $self->{db_dir} ? $self->{db_dir} : do {
@@ -131,6 +133,10 @@ sub start ($) {
         ([$self->{mysqld},
           '--defaults-file=' . $self->{my_cnf_file},
           '--user=' . $self->{mysqld_user}]);
+    my $stop_code = sub { return $self->stop };
+    $self->{signals}->{$_} = Promised::Command::Signals->add_handler
+        ($_ => $stop_code) for qw(TERM QUIT INT);
+    $self->{cmd}->signal_before_destruction ('TERM');
     
     $_[0]->($self->_create_my_cnf);
   })->then (sub {
@@ -167,7 +173,7 @@ sub start ($) {
       };
     })->catch (sub {
       my $error = $_[0];
-      return $self->{cmd}->wait->then (sub { die $error });
+      return $self->{cmd}->wait->then (sub { delete $self->{cmd}; die $error });
     });
   });
 } # start
@@ -175,16 +181,109 @@ sub start ($) {
 sub stop ($) {
   my $self = $_[0];
   my $cmd = $self->{cmd};
-  return Promise->reject ("Not yet started") unless defined $cmd;
-  return $cmd->send_signal ('TERM')->then (sub { return $cmd->wait })->then (sub {
+  return Promise->resolve unless defined $cmd;
+  return Promise->all ([map {
+    my $key = $_;
+    $self->{client}->{$key}->disconnect->then (sub {
+      delete $self->{client}->{$key};
+    });
+  } keys %{$self->{client} or {}}])->then (sub {
+    return $cmd->send_signal ('TERM');
+  })->then (sub { return $cmd->wait })->then (sub {
+    delete $self->{cmd};
+    delete $self->{signals};
     if ($self->{db_dir_debug}) {
       AE::log alert => "Promised::Mysqld: Database directory was: $self->{db_dir}";
     } else {
       return Promised::File->new_from_path ($self->{tempdir})->remove_tree
           if $self->{tempdir};
     }
+    return;
   });
 } # stop
+
+sub get_dsn_options ($) {
+  my $self = $_[0];
+  my $my_cnf = $self->my_cnf;
+  my %args;
+  $args{port} = $my_cnf->{port} if defined $my_cnf->{port};
+  if (defined $args{port}) {
+    $args{host} = $my_cnf->{'bind-address'} // '127.0.0.1';
+  } else {
+    $args{mysql_socket} = $self->{socket_file} if defined $self->{socket_file};
+  }
+  $args{user} ='root';
+  #$args{password}
+  $args{dbname} = 'mysql';
+  return \%args;
+} # get_dsn_options
+
+sub get_dsn_string ($;%) {
+  my ($self, %args) = @_;
+  my %opt = %{$self->get_dsn_options};
+  for (keys %args) {
+    $opt{$_} = $args{$_} if defined $args{$_};
+  }
+  return 'DBI:mysql:' . join ';', map { "$_=$opt{$_}" } sort { $a cmp $b } keys %opt;
+} # get_dsn_string
+
+sub client_connect ($;%) {
+  my ($self, %args) = @_;
+  my $dbname = $args{dbname} // 'mysql';
+  return Promise->resolve ($self->{client}->{$dbname})
+      if defined $self->{client}->{$dbname};
+  my $dsn = $self->get_dsn_options;
+  return Promise->new (sub {
+    my ($ok, $ng) = @_;
+    require AnyEvent::MySQL::Client;
+    require AnyEvent::MySQL::Client::ShowLog if $ENV{SQL_DEBUG};
+    $self->{client}->{$dbname} = my $client = AnyEvent::MySQL::Client->new;
+    my %connect;
+    if (defined $dsn->{port}) {
+      $connect{hostname} = $dsn->{host};
+      $connect{port} = $dsn->{port};
+    } else {
+      $connect{hostname} = 'unix/';
+      $connect{port} = $dsn->{mysql_socket};
+    }
+    $ok->($client->connect (
+      %connect,
+      username => $dsn->{user},
+      password => $dsn->{password},
+      database => $dbname,
+    )->then (sub { return $client }));
+  });
+} # client_connect
+
+sub create_db_and_execute_sqls ($$$) {
+  my ($self, $dbname, $sqls) = @_;
+  return $self->client_connect->then (sub {
+    my $client_mysql = $_[0];
+    my $escaped = $dbname;
+    $escaped =~ s/`/``/g;
+    return $client_mysql->query ("CREATE DATABASE IF NOT EXISTS `$escaped`");
+  })->then (sub {
+    return $self->client_connect (dbname => $dbname);
+  })->then (sub {
+    my $client = $_[0];
+    my $p = Promise->resolve;
+    for my $sql (@$sqls) {
+      $p = $p->then (sub {
+        die $_[0] if defined $_[0] and not $_[0]->is_success;
+        return $client->query ($sql);
+      });
+    }
+    return $p;
+  });
+} # create_db_and_execute_sqls
+
+sub DESTROY ($) {
+  my $cmd = $_[0]->{cmd};
+  if (defined $cmd and $cmd->running and
+      defined $_[0]->{start_pid} and $_[0]->{start_pid} == $$) {
+    $cmd->send_signal ('TERM');
+  }
+} # DESTROY
 
 1;
 
