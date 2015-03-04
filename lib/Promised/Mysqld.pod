@@ -1,6 +1,6 @@
 =head1 NAME
 
-Promised::Mysqld - MySQL server wrapper for testing
+Promised::Mysqld - MySQL server wrapper for development and testing
 
 =head1 SYNOPSIS
 
@@ -17,7 +17,8 @@ Promised::Mysqld - MySQL server wrapper for testing
 
 The C<Promised::Mysqld> class provides a L<Promise>-aware interface to
 start and stop C<mysqld> process, for the purpose of development and
-testing.
+testing.  It creates a temporary database and start the MySQL server
+using it.
 
 =head1 METHODS
 
