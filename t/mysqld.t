@@ -160,6 +160,29 @@ test {
 
 test {
   my $c = shift;
+  my $s = Promised::Mysqld->new;
+  my $db_dir = path (__FILE__)->parent->parent->child ('local/test/test-db-dir' . $$ . rand);
+  Promised::File->new_from_path ($db_dir)->write_byte_string ('')->then (sub {
+    $s->set_db_dir ($db_dir);
+    return $s->start;
+  })->then (sub { test { ok 0 } $c }, sub {
+    my $error = $_[0];
+    test {
+      like $error, qr{\Q$db_dir\E};
+    } $c;
+    return $s->stop;
+  })->then (sub {
+    test {
+      ok -f $db_dir;
+    } $c;
+  })->then (sub {
+    done $c;
+    undef $c;
+  });
+} n => 2, name => 'set_db_dir mkdir error';
+
+test {
+  my $c = shift;
   my $mysqld = Promised::Mysqld->new;
   $mysqld->stop->then (sub {
     test {
