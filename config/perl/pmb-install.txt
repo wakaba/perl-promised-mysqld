@@ -11,4 +11,4 @@ AnyEvent::Util
 File::Temp~0.2304
 Digest::SHA~5.95
 File::Path~2.09
-Path::Tiny~0.061
+Path::Tiny~0.065
