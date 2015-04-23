@@ -1,4 +1,4 @@
-Scalar::Util~1.41
+Scalar::Util~1.42
 Term::ANSIColor~4.03
 parent~0.232
 File::Spec~3.47
