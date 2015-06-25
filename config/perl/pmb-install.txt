@@ -4,7 +4,7 @@ parent~0.234
 File::Spec~3.47
 Time::HiRes~1.9726
 Carp~1.36
-Encode~2.73
+Encode~2.74
 Filter::Util::Call~1.54
 Test::Builder~1.001014
 AnyEvent::Util
