@@ -112,17 +112,19 @@ sub start ($) {
   return Promise->new (sub {
     die "mysqld already started" if defined $self->{cmd};
 
-    $self->{start_pid} = $$;
     $self->{db_dir_debug} = $ENV{PROMISED_MYSQLD_DEBUG};
     $self->_find_mysql or die "|mysqld| and/or |mysql_install_db| not found";
     my $db_dir = defined $self->{db_dir} ? $self->{db_dir} : do {
       $self->{tempdir} = File::Temp->newdir (CLEANUP => !$self->{db_dir_debug});
       ''.$self->{tempdir};
     };
-    $db_dir = abs_path ($db_dir);
-    $self->{db_dir} = $db_dir;
-    $self->{my_cnf_file} = "$db_dir/etc/my.cnf";
-    $self->{mysqld_user} = getpwuid $>;
+    my $dir = Promised::File->new_from_path ($db_dir);
+    $_[0]->($dir->mkpath->then (sub {
+      $self->{db_dir} = abs_path $db_dir;
+    }));
+  })->then (sub {
+    $self->{start_pid} = $$;
+    $self->{my_cnf_file} = "$self->{db_dir}/etc/my.cnf";
 
     if ($self->{db_dir_debug}) {
       AE::log alert => "Promised::Mysqld: Database directory is: $self->{db_dir}";
@@ -132,13 +134,13 @@ sub start ($) {
     $self->{cmd} = Promised::Command->new
         ([$self->{mysqld},
           '--defaults-file=' . $self->{my_cnf_file},
-          '--user=' . $self->{mysqld_user}]);
+          '--user=root']);
     my $stop_code = sub { return $self->stop };
     $self->{signals}->{$_} = Promised::Command::Signals->add_handler
         ($_ => $stop_code) for qw(TERM QUIT INT);
     $self->{cmd}->signal_before_destruction ('TERM');
     
-    $_[0]->($self->_create_my_cnf);
+    return $self->_create_my_cnf;
   })->then (sub {
     return $self->_create_mysql_db;
   })->then (sub {
