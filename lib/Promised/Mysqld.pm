@@ -162,7 +162,7 @@ sub start ($) {
               undef $timer;
             } else {
               if ($try_count++ > $self->start_timeout / $interval) {
-                $ng->("|mysqld| server failed to start");
+                $ng->("|mysqld| server failed to start (timeout)");
               } else {
                 #
               }
@@ -175,7 +175,7 @@ sub start ($) {
       };
     })->catch (sub {
       my $error = $_[0];
-      return $self->{cmd}->wait->then (sub { delete $self->{cmd}; die $error });
+      return $self->{cmd}->wait->then (sub { delete $self->{cmd}; die "$error - $_[0]" });
     });
   });
 } # start
@@ -192,6 +192,7 @@ sub stop ($) {
   } keys %{$self->{client} or {}}])->then (sub {
     return $cmd->send_signal ('TERM');
   })->then (sub { return $cmd->wait })->then (sub {
+    die "Failed to stop mysqld - $_[0]" unless $_[0]->exit_code == 0;
     delete $self->{cmd};
     delete $self->{signals};
     if ($self->{db_dir_debug}) {
@@ -201,6 +202,8 @@ sub stop ($) {
           if $self->{tempdir};
     }
     return;
+  }, sub {
+    die "Failed to stop mysqld - $_[0]";
   });
 } # stop
 
