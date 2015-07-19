@@ -125,7 +125,6 @@ sub start ($) {
   })->then (sub {
     $self->{start_pid} = $$;
     $self->{my_cnf_file} = "$self->{db_dir}/etc/my.cnf";
-    $self->{mysqld_user} = getpwuid $>;
 
     if ($self->{db_dir_debug}) {
       AE::log alert => "Promised::Mysqld: Database directory is: $self->{db_dir}";
@@ -135,7 +134,7 @@ sub start ($) {
     $self->{cmd} = Promised::Command->new
         ([$self->{mysqld},
           '--defaults-file=' . $self->{my_cnf_file},
-          '--user=' . $self->{mysqld_user}]);
+          '--user=root']);
     my $stop_code = sub { return $self->stop };
     $self->{signals}->{$_} = Promised::Command::Signals->add_handler
         ($_ => $stop_code) for qw(TERM QUIT INT);
