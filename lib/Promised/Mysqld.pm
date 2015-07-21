@@ -108,6 +108,7 @@ sub _create_mysql_db ($) {
     $self->{mysql_install_db},
     '--defaults-file=' . $self->{my_cnf_file},
     '--basedir=' . $base_dir,
+    '--verbose',
   ]);
   return $cmd->run->then (sub { $cmd->wait })->then (sub {
     die "|mysql_install_db| failed: $_[0]"
