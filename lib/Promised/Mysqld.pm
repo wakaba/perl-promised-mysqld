@@ -100,7 +100,15 @@ sub _create_mysql_db ($) {
   ## <http://dev.mysql.com/doc/refman/5.7/en/mysql-install-db.html>
   ## XXX "mysql_install_db is deprecated as of MySQL 5.7.6 because its
   ## functionality has been integrated into mysqld, the MySQL server."
-  my $cmd = Promised::Command->new ([$self->{mysql_install_db}, '--defaults-file=' . $self->{my_cnf_file}]);
+  my $base_dir = $self->{mysql_install_db};
+  $base_dir =~ s{[^/]+\z}{};
+  $base_dir =~ s{[^/]*/\z}{} or $base_dir =~ s{/?\z}{/..};
+  $base_dir =~ s{(?!^)/\z}{};
+  my $cmd = Promised::Command->new ([
+    $self->{mysql_install_db},
+    '--defaults-file=' . $self->{my_cnf_file},
+    '--basedir=' . $base_dir,
+  ]);
   return $cmd->run->then (sub { $cmd->wait })->then (sub {
     die "|mysql_install_db| failed: $_[0]"
         unless $_[0]->is_success and $_[0]->exit_code == 0;
