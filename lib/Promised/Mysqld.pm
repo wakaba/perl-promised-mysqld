@@ -110,6 +110,10 @@ sub _create_mysql_db ($) {
     '--basedir=' . $base_dir,
     '--verbose',
   ]);
+  ## In some environment, |mysql_install_db| is a Perl script, which
+  ## might depend on system's Perl XS modules.
+  $cmd->envs->{PERL5LIB} = '';
+  $cmd->envs->{PERL5OPT} = '';
   return $cmd->run->then (sub { $cmd->wait })->then (sub {
     die "|mysql_install_db| failed: $_[0]"
         unless $_[0]->is_success and $_[0]->exit_code == 0;
