@@ -22,7 +22,8 @@ sub new ($) {
 sub _find_mysql ($) {
   my $self = $_[0];
   return 1 if defined $self->{mysqld} and defined $self->{mysql_install_db};
-  for ((split /:/, $ENV{PATH} || ''), '/usr/local/mysql/bin') {
+  for ('/usr/local/opt/mysql/bin', # homebrew
+       (split /:/, $ENV{PATH} || ''), '/usr/local/mysql/bin') {
     my $dir = $_;
     $dir =~ s{[^/]*$}{};
     $dir = "." unless length $dir;
