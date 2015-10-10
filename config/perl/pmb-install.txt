@@ -10,5 +10,5 @@ Test::Builder~1.001014
 AnyEvent::Util
 File::Temp~0.2304
 Digest::SHA~5.95
-File::Path~2.11
+File::Path~2.12
 Path::Tiny~0.072
