@@ -194,30 +194,37 @@ sub start ($) {
   });
 } # start
 
-sub stop ($) {
+sub disconnect_clients ($) {
   my $self = $_[0];
-  my $cmd = $self->{cmd};
-  return Promise->resolve unless defined $cmd;
   return Promise->all ([map {
     my $key = $_;
     $self->{client}->{$key}->disconnect->then (sub {
       delete $self->{client}->{$key};
     });
-  } keys %{$self->{client} or {}}])->then (sub {
-    return $cmd->send_signal ('TERM');
-  })->then (sub { return $cmd->wait })->then (sub {
-    die "Failed to stop mysqld - $_[0]" unless $_[0]->exit_code == 0;
-    delete $self->{cmd};
-    delete $self->{signals};
-    if ($self->{db_dir_debug}) {
-      AE::log alert => "Promised::Mysqld: Database directory was: $self->{db_dir}";
-    } else {
-      return Promised::File->new_from_path ($self->{tempdir})->remove_tree
-          if $self->{tempdir};
-    }
-    return;
-  }, sub {
-    die "Failed to stop mysqld - $_[0]";
+  } keys %{$self->{client} or {}}]);
+} # disconnect_clients
+
+sub stop ($) {
+  my $self = $_[0];
+  return $self->disconnect_clients->then (sub {
+    my $cmd = $self->{cmd};
+    return unless defined $cmd;
+    return Promise->resolve->then (sub {
+      return $cmd->send_signal ('TERM');
+    })->then (sub { return $cmd->wait })->then (sub {
+      die "Failed to stop mysqld - $_[0]" unless $_[0]->exit_code == 0;
+      delete $self->{cmd};
+      delete $self->{signals};
+      if ($self->{db_dir_debug}) {
+        AE::log alert => "Promised::Mysqld: Database directory was: $self->{db_dir}";
+      } else {
+        return Promised::File->new_from_path ($self->{tempdir})->remove_tree
+            if $self->{tempdir};
+      }
+      return;
+    }, sub {
+      die "Failed to stop mysqld - $_[0]";
+    });
   });
 } # stop
 
