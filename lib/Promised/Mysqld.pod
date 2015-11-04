@@ -82,6 +82,12 @@ C<mysqld> process is configured such that any file read or written
 by the C<db_dir> method and that no TCP/IP port is listen but a Unix
 domain socket is created in the C<db_dir>'s directory.
 
+If you want C<mysqld> to listen a TCP port, following lines should be
+executed before the C<start> method invocation:
+
+  $mysqld->my_cnf->{port} = $port;
+  delete $mysqld->my_cnf->{'skip-networking'};
+
 =item $time = $mysqld->start_timeout
 
 =item $mysqld->start_timeout ($time)
