@@ -1,7 +1,6 @@
 Scalar::Util~1.43
 Term::ANSIColor~4.04
 parent~0.234
-File::Spec~3.62
 Time::HiRes~1.9728
 Carp~1.38
 Encode~2.82
@@ -11,4 +10,5 @@ AnyEvent::Util
 File::Temp~0.2304
 Digest::SHA~5.95
 File::Path~2.12
-Path::Tiny~0.076
+Cwd~3.62
+Path::Tiny~0.082
