@@ -299,7 +299,9 @@ sub create_db_and_execute_sqls ($$$) {
         return $client->query ($sql);
       });
     }
-    return $p;
+    return $p->then (sub {
+      die $_[0] if defined $_[0] and not $_[0]->is_success;
+    });
   });
 } # create_db_and_execute_sqls
 
@@ -315,7 +317,7 @@ sub DESTROY ($) {
 
 =head1 LICENSE
 
-Copyright 2015 Wakaba <wakaba@suikawiki.org>.
+Copyright 2015-2016 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

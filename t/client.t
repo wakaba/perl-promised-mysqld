@@ -123,11 +123,56 @@ test {
   });
 } n => 3, name => 'create_db_and_execute_sqls failure';
 
+test {
+  my $c = shift;
+  my $mysqld = Promised::Mysqld->new;
+  $mysqld->start->then (sub {
+    return $mysqld->create_db_and_execute_sqls ('fugax', [
+      'CREATE TABLE abc (id int)',
+      'INSERT INTO abc (id) VALUES (42)',
+      'INSERT INTO abcd (id) VALUES (10)',
+    ]);
+  })->then (sub {
+    test { ok 0 } $c;
+  }, sub {
+    my $result = $_[0];
+    test {
+      isa_ok $result, 'AnyEvent::MySQL::Client::Result';
+      ok $result->is_failure;
+    } $c;
+  })->then (sub {
+    return $mysqld->client_connect (dbname => 'fugax');
+  })->then (sub {
+    my $client = $_[0];
+    my $got = [];
+    return $client->query ('select * from abc', sub {
+      my $row = shift;
+      my @col = map { $_->{name} } @{$row->column_packets};
+      my $d = $row->packet->{data};
+      my $data = {};
+      $data->{$col[$_]} = $d->[$_] for 0..$#col;
+      push @$got, $data;
+    })->then (sub {
+      test {
+        is_deeply $got, [{'id' => 42}];
+      } $c;
+    });
+  })->catch (sub {
+    warn $_[0];
+    test { ok 0 } $c;
+  })->then (sub {
+    return $mysqld->stop;
+  })->then (sub {
+    done $c;
+    undef $c;
+  });
+} n => 3, name => 'create_db_and_execute_sqls failure';
+
 run_tests;
 
 =head1 LICENSE
 
-Copyright 2015 Wakaba <wakaba@suikawiki.org>.
+Copyright 2015-2016 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
