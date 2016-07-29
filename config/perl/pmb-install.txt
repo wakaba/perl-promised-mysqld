@@ -5,10 +5,10 @@ Time::HiRes~1.9739
 Carp~1.38
 Encode~2.84
 Filter::Util::Call~1.55
-Test::Builder~1.302047
+Test::Builder~1.302049
 AnyEvent::Util
 File::Temp~0.2304
-Digest::SHA~5.95
+Digest::SHA~5.96
 File::Path~2.12
 Cwd~3.62
 Path::Tiny~0.096
