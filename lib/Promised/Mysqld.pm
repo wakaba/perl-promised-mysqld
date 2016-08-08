@@ -294,6 +294,7 @@ sub create_db_and_execute_sqls ($$$) {
     my $client = $_[0];
     my $p = Promise->resolve;
     for my $sql (@$sqls) {
+      next unless $sql =~ /[^\x09\x0A\x0C\x0D\x20]/;
       $p = $p->then (sub {
         die $_[0] if defined $_[0] and not $_[0]->is_success;
         return $client->query ($sql);
