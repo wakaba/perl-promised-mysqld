@@ -206,7 +206,7 @@ sub disconnect_clients ($) {
 
 sub stop ($) {
   my $self = $_[0];
-  return $self->disconnect_clients->then (sub {
+  return $self->{stopped} ||= $self->disconnect_clients->then (sub {
     my $cmd = $self->{cmd};
     return unless defined $cmd;
     return Promise->resolve->then (sub {
