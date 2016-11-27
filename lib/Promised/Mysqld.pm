@@ -57,6 +57,7 @@ sub my_cnf ($) {
     'skip-networking' => '',
     'innodb_lock_wait_timeout' => 2,
     'max_connections' => 1000,
+    sql_mode => '', # old default; 5.6 default is: NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
   };
 } # my_cnf
 
