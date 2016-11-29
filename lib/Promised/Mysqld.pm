@@ -54,7 +54,7 @@ sub set_db_dir ($$) {
 
 sub my_cnf ($) {
   return $_[0]->{my_cnf} ||= {
-    'skip-networking' => '',
+    'skip-networking' => undef,
     'innodb_lock_wait_timeout' => 2,
     'max_connections' => 1000,
     sql_mode => '', # old default; 5.6 default is: NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
@@ -71,7 +71,7 @@ sub _create_my_cnf ($) {
   $my_cnf->{tmpdir} //= "$db_dir/tmp";
   my $my_cnf_text = join "\x0A", '[mysqld]', (map {
     my $v = $my_cnf->{$_};
-    (defined $v and length $v) ? "$_=$v" : $_;
+    (defined $v) ? "$_=$v" : $_;
   } sort { $a cmp $b } keys %$my_cnf), '';
 
   my @p;
