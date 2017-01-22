@@ -106,20 +106,43 @@ sub _create_mysql_db ($) {
   $base_dir =~ s{[^/]+\z}{};
   $base_dir =~ s{[^/]*/\z}{} or $base_dir =~ s{/?\z}{/..};
   $base_dir =~ s{(?!^)/\z}{};
-  my $cmd = Promised::Command->new ([
-    $self->{mysql_install_db},
-    '--defaults-file=' . $self->{my_cnf_file},
-    '--basedir=' . $base_dir,
-    '--datadir=' . $self->{datadir}, # set by _create_mysql_cnf
-    '--verbose',
-  ]);
-  ## In some environment, |mysql_install_db| is a Perl script, which
-  ## might depend on system's Perl XS modules.
-  $cmd->envs->{PERL5LIB} = '';
-  $cmd->envs->{PERL5OPT} = '';
-  return $cmd->run->then (sub { $cmd->wait })->then (sub {
-    die "|mysql_install_db| failed: $_[0]"
-        unless $_[0]->is_success and $_[0]->exit_code == 0;
+  my $run; $run = sub {
+    my $with_insecure = shift;
+    my $cmd = Promised::Command->new ([
+      $self->{mysql_install_db},
+      '--defaults-file=' . $self->{my_cnf_file},
+      '--basedir=' . $base_dir,
+      '--datadir=' . $self->{datadir}, # set by _create_mysql_cnf
+      ($with_insecure ? ('--insecure') : ()),
+      '--verbose',
+    ]);
+    ## In some environment, |mysql_install_db| is a Perl script, which
+    ## might depend on system's Perl XS modules.
+    $cmd->envs->{PERL5LIB} = '';
+    $cmd->envs->{PERL5OPT} = '';
+    my $no_insecure;
+    if ($with_insecure) {
+      $cmd->stderr (sub {
+        print STDERR $_[0];
+        if ($_[0] =~ /unknown option '--insecure'/) {
+          $no_insecure = 1;
+        }
+      });
+    }
+    return $cmd->run->then (sub { $cmd->wait })->then (sub {
+      unless ($_[0]->is_success and $_[0]->exit_code == 0) {
+        if ($no_insecure) {
+          return $run->(0);
+        }
+        die "|mysql_install_db| failed: $_[0]";
+      }
+    });
+  }; # $run;
+  return $run->(1)->then (sub {
+    undef $run;
+  }, sub {
+    undef $run;
+    die $_[0];
   });
 } # _create_mysql_db
 
@@ -320,7 +343,7 @@ sub DESTROY ($) {
 
 =head1 LICENSE
 
-Copyright 2015-2016 Wakaba <wakaba@suikawiki.org>.
+Copyright 2015-2017 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
