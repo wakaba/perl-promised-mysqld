@@ -5,6 +5,9 @@ perl:
   - "5.24"
   - "5.14"
   - "5.12"
+os:
+  - linux
+  - osx
 before_install: git submodule update --init
 install: "make test-deps"
 script: "make test"
