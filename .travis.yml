@@ -11,7 +11,7 @@ os:
 before_install: git submodule update --init
 install:
   - "make test-deps"
-  - "homebrew mysql || true"
+  - "brew install mysql || true"
 script: "make test"
 notifications:
   email:
