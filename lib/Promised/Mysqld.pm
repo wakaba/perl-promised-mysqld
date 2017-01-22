@@ -67,7 +67,7 @@ sub _create_my_cnf ($) {
   my $my_cnf = {%{$self->my_cnf}};
   $self->{pid_file} = $my_cnf->{'pid-file'} //= "$db_dir/tmp/mysqld.pid";
   $self->{socket_file} = $my_cnf->{socket} //= "$db_dir/tmp/mysql.sock";
-  $my_cnf->{datadir} //= "$db_dir/var";
+  $self->{datadir} = $my_cnf->{datadir} //= "$db_dir/var";
   $my_cnf->{tmpdir} //= "$db_dir/tmp";
   my $my_cnf_text = join "\x0A", '[mysqld]', (map {
     my $v = $my_cnf->{$_};
@@ -110,6 +110,7 @@ sub _create_mysql_db ($) {
     $self->{mysql_install_db},
     '--defaults-file=' . $self->{my_cnf_file},
     '--basedir=' . $base_dir,
+    '--datadir=' . $self->{datadir}, # set by _create_mysql_cnf
     '--verbose',
   ]);
   ## In some environment, |mysql_install_db| is a Perl script, which
@@ -157,7 +158,7 @@ sub start ($) {
     
     return $self->_create_my_cnf;
   })->then (sub {
-    return $self->_create_mysql_db;
+    return $self->_create_mysql_db; # invoke after _create_my_cnf
   })->then (sub {
     return $self->{cmd}->run;
   })->then (sub {
