@@ -103,10 +103,10 @@ for my $signal (qw(INT TERM QUIT)) {
         return $mysqld->{cmd}->wait->then (sub {
           $cv->send;
         }, sub {
-          exit 1;
+          exit 2;
         });
       }, sub {
-        exit 1;
+        exit 3;
       });
       $cv->recv;
     }]);
