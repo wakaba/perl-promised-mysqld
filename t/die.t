@@ -128,6 +128,11 @@ for my $signal (qw(INT TERM QUIT)) {
           }
         };
       });
+    })->catch (sub {
+      test { ok 0 } $c;
+      done $c;
+      undef $c;
+      die $_[0];
     })->then (sub {
       return $cmd->send_signal ($signal);
     })->then (sub {
