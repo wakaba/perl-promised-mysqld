@@ -40,5 +40,6 @@ test: test-deps test-main
 test-deps: deps
 
 test-main:
-	PROMISED_COMMAND_DEBUG=1 ./perl t/die.t
 	$(PROVE) t/*.t
+
+## License: Public Domain.
