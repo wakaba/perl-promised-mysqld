@@ -17,12 +17,13 @@ Promised::Mysqld - MySQL server wrapper for development and testing
 
 The C<Promised::Mysqld> class provides a L<Promise>-aware interface to
 start and stop C<mysqld> process, for the purpose of development and
-testing.  It creates a temporary database and start the MySQL server
-using it.
+testing of Perl applications.  It creates a database in the temporary
+directory (or in the directory specified by the application) and
+starts a MySQL server instance using it.
 
 =head1 METHODS
 
-Following methods are available:
+There are following methods:
 
 =over 4
 
@@ -32,17 +33,17 @@ Create a new instance.
 
 =item $promise = $mysqld->start
 
-Return a L<Promise>, which is resolved after the MySQL server is ready
-to accept queries.  The promise is rejected if the server failed to
-start.
+Start the MySQL server instance and return a promise (L<Promise>),
+which is resolved when the server is ready to accept SQL queries.  The
+promise is rejected if the server failed to start.
 
 =item $promise = $mysqld->stop
 
-Return a L<Promise>, which is resolved after the MySQL server is
-shutdown.
+0Stop the MySQL server instance and return a promise (L<Promise>),
+which is resolved after the server is shutdown.
 
 This method must be invoked after the C<start> method is invoked.  It
-can be invoked even when the C<start>'s promise is rejected.
+can be invoked even after the C<start>'s promise is rejected.
 
 =item $mysqld->set_mysqld_and_mysql_install_db ($mysqld, $mysql_install_db)
 
@@ -123,29 +124,30 @@ This method must be invoked after the C<start>'s promise is resolved.
 
 =item $mysqld->client_connect (NAME => VALUE, ...)->then (sub { $client = shift })
 
-Return a L<Promise>, which is resolved with an
-L<AnyEvent::MySQL::Client> object which is connected to the database.
-By default it is connected to the C<mysql> database, which is the only
-database in the server when the server is created with no initial
-data.  This can be changed by specifying the C<dbname> named argument
-to the method.
+Connect to the MySQL server as a client and return a promise
+(L<Promise>), which is resolved with the L<AnyEvent::MySQL::Client>
+object which is connected to the database.  By default it is connected
+to the C<mysql> database on the server, which is the only database
+when the database is initialized without data.  This can be altered by
+specifying the C<dbname> named argument to the method.
 
 This method must be invoked after the C<start>'s promise is resolved.
 The C<disconnect> method of the client object does not have to be
-explicitly invoked, as the C<stop> method will invoke the method
-before shutting down the MySQL server.
+explicitly invoked.  The C<stop> method will invoke the method before
+shutting down the MySQL server, if necessary.
 
-This method requires L<AnyEvent::MySQL::Client> module.
+This method requires the L<AnyEvent::MySQL::Client> module.
 
 =item $promise = $mysqld->create_db_and_execute_sqls ($dbname, [$sql, $sql, ...])
 
-Return a L<Promise>, which is resolved after SQL statements specified
-by the arguments are executed on the database.  The promise is
-rejected if the execution is failed.
+Execute a set of SQL stagements and return a promise (L<Promise>),
+which is resolved after the SQL statements specified by the arguments
+are executed on the created database.  The promise is rejected if the
+execution is failed.
 
 The first argument must be the database name.  If there is no database
-with the specified name, a new database is created (by an SQL C<CREATE
-DATABASE> statement).
+with the specified name on the server, a new database is created (by
+an SQL C<CREATE DATABASE> statement).
 
 The second argument must be an array reference of zero or more
 strings, which are sent to the MySQL server as SQL statements, in
@@ -153,7 +155,7 @@ order.
 
 This method must be invoked after the C<start>'s promise is resolved.
 
-This method requires L<AnyEvent::MySQL::Client> module.
+This method requires the L<AnyEvent::MySQL::Client> module.
 
 =back
 
@@ -162,8 +164,8 @@ C<SIGTERM>, and C<SIGQUIT> are installed such that these signal will
 terminate the server (and the current script).  If the script wants to
 handle signal in other ways, the handling should be specified using
 the L<Promised::Command::Signals> API from
-<https://github.com/wakaba/perl-promised-command> to avoid
-confliction.
+<https://github.com/wakaba/perl-promised-command> to avoid confliction
+of signal handlers.
 
 =head1 DEPENDENCY
 
@@ -183,7 +185,7 @@ commands).
 
 =head1 AUTHOR
 
-Wakaba <wakaba@uikawiki.org>.
+Wakaba <wakaba@suikawiki.org>.
 
 =head1 ACKNOWLEDGEMENTS
 
@@ -194,7 +196,7 @@ L<Test::MySQL::CreateDatabase>
 
 =head1 LICENSE
 
-Copyright 2015 Wakaba <wakaba@suikawiki.org>.
+Copyright 2015-2017 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
