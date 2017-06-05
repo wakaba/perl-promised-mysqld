@@ -6,6 +6,7 @@ use Cwd qw(abs_path);
 use File::Temp;
 use AnyEvent;
 use Promise;
+use Promised::Flow;
 use Promised::Command;
 use Promised::Command::Signals;
 use Promised::File;
@@ -182,6 +183,23 @@ sub start ($) {
     return $self->_create_my_cnf;
   })->then (sub {
     return $self->_create_mysql_db; # invoke after _create_my_cnf
+  })->then (sub {
+    my $pid_file = Promised::File->new_from_path ($self->{pid_file});
+    return $pid_file->is_file->then (sub {
+      if ($_[0]) {
+        return $pid_file->read_byte_string->then (sub {
+          my $pid = $_[0];
+          if (kill 0, $pid) {
+            kill 2, $pid; # SIGINT
+            return promised_wait_until {
+              kill 0, $pid;
+            } timeout => 60;
+          } else {
+            return $pid_file->remove_tree;
+          }
+        });
+      }
+    });
   })->then (sub {
     return $self->{cmd}->run;
   })->then (sub {
