@@ -4,6 +4,7 @@ use Path::Tiny;
 use lib glob path (__FILE__)->parent->parent->child ('t_deps/modules/*/lib');
 use Test::More;
 use Test::X1;
+use Promised::Flow;
 use Promised::Command;
 
 test {
@@ -28,13 +29,7 @@ test {
       test {
         is $run->exit_code, 0;
       } $c;
-      return Promise->new (sub {
-        my ($ok, $ng) = @_;
-        my $timer; $timer = AE::timer 0.5, 0, sub {
-          $ok->();
-          undef $timer;
-        };
-      });
+      return promised_sleep 3;
     });
   })->then (sub {
     $stderr =~ /\npid=([0-9]+)\n/;
@@ -70,13 +65,7 @@ test {
       test {
         is $run->exit_code, 0;
       } $c;
-      return Promise->new (sub {
-        my ($ok, $ng) = @_;
-        my $timer; $timer = AE::timer 0.5, 0, sub {
-          $ok->();
-          undef $timer;
-        };
-      });
+      return promised_sleep 3;
     });
   })->then (sub {
     $stderr =~ /\npid=([0-9]+)\n/;
@@ -112,22 +101,9 @@ for my $signal (qw(INT TERM QUIT)) {
     }]);
     $cmd->stderr (\my $stderr);
     $cmd->run->then (sub {
-      return Promise->new (sub {
-        my ($ok, $ng) = @_;
-        my $time = 0;
-        my $timer; $timer = AE::timer 0, 0.5, sub {
-          if (defined $stderr and $stderr =~ /^pid=[0-9]+$/m) {
-            $ok->();
-            undef $timer;
-          } else {
-            $time += 0.5;
-            if ($time > 30) {
-              $ng->("timeout ($time > 30, stderr is [$stderr])");
-              undef $timer;
-            }
-          }
-        };
-      });
+      return promised_wait_until {
+        return (defined $stderr and $stderr =~ /^pid=[0-9]+$/m);
+      } timeout => 60*3;
     })->catch (sub {
       test { ok 0 } $c;
       done $c;
@@ -147,14 +123,14 @@ for my $signal (qw(INT TERM QUIT)) {
       done $c;
       undef $c;
     });
-  } n => 1, name => $signal;
+  } n => 1, name => $signal, timeout => 60*4;
 }
 
 run_tests;
 
 =head1 LICENSE
 
-Copyright 2015 Wakaba <wakaba@suikawiki.org>.
+Copyright 2015-2017 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
