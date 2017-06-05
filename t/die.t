@@ -122,7 +122,7 @@ for my $signal (qw(INT TERM QUIT)) {
           } else {
             $time += 0.5;
             if ($time > 30) {
-              $ng->("timeout");
+              $ng->("timeout ($time > 30, stderr is [$stderr])");
               undef $timer;
             }
           }

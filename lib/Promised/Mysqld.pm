@@ -189,7 +189,8 @@ sub start ($) {
       if ($_[0]) {
         return $pid_file->read_byte_string->then (sub {
           my $pid = $_[0];
-          if (kill 0, $pid) {
+          $pid =~ s/[\x0D\x0A]+\z//g;
+          if (eval { kill 0, $pid }) {
             kill 2, $pid; # SIGINT
             return promised_wait_until {
               kill 0, $pid;
