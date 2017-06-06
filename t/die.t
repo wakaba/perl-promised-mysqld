@@ -14,6 +14,7 @@ test {
     use Promised::Mysqld;
     my $mysqld = Promised::Mysqld->new;
     my $cv = AE::cv;
+    $mysqld->start_timeout (60);
     $mysqld->start->then (sub {
       warn "\npid=@{[$mysqld->{cmd}->pid]}\n";
       exit 0;
@@ -41,7 +42,7 @@ test {
     done $c;
     undef $c;
   });
-} n => 2;
+} n => 2, timeout => 60*2;
 
 test {
   my $c = shift;
@@ -50,6 +51,7 @@ test {
     use Promised::Mysqld;
     our $mysqld = Promised::Mysqld->new;
     my $cv = AE::cv;
+    $mysqld->start_timeout (60);
     $mysqld->start->then (sub {
       warn "\npid=@{[$mysqld->{cmd}->pid]}\n";
       $cv->send;
@@ -77,7 +79,7 @@ test {
     done $c;
     undef $c;
   });
-} n => 2;
+} n => 2, timeout => 60*2;
 
 for my $signal (qw(INT TERM QUIT)) {
   test {
