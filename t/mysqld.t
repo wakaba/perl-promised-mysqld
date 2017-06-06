@@ -137,7 +137,7 @@ test {
 test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
-  my $db_dir = path (__FILE__)->parent->parent->child ('local/test/test-db-dir' . $$ . rand);
+  my $db_dir = path (__FILE__)->parent->parent->child ('local/test/dbdir/' . $$ . int rand 1000);
   $s->set_db_dir ($db_dir);
   $s->start_timeout (60);
   $s->start->then (sub {
