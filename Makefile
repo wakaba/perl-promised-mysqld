@@ -38,6 +38,7 @@ PROVE = ./prove
 test: test-deps test-main
 
 test-deps: deps
+	perl local/bin/pmbp.pl $(PMBP_OPTIONS) --install-mysqld
 
 test-main:
 	$(PROVE) t/*.t
