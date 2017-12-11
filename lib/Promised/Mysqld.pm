@@ -124,6 +124,7 @@ sub _create_mysql_db ($) {
     my $no_insecure;
     if ($with_insecure) {
       $cmd->stderr (sub {
+        return unless defined $_[0];
         print STDERR $_[0];
         if ($_[0] =~ /unknown option '--insecure'/) {
           $no_insecure = 1;
@@ -131,10 +132,11 @@ sub _create_mysql_db ($) {
       });
     }
     return $cmd->run->then (sub { $cmd->wait })->then (sub {
+      if ($no_insecure) {
+        warn "Retry |mysql_install_db| without |--insecure| option...\n";
+        return $run->(0);
+      }
       unless ($_[0]->is_success and $_[0]->exit_code == 0) {
-        if ($no_insecure) {
-          return $run->(0);
-        }
         die "|mysql_install_db| failed: $_[0]";
       }
     });
