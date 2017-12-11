@@ -17,3 +17,4 @@
 [submodule "modules/anyevent-mysql-client"]
 	path = modules/anyevent-mysql-client
 	url = https://github.com/wakaba/perl-anyevent-mysql-client
+	track = master
