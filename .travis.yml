@@ -14,11 +14,6 @@ install:
   - mysqld --version
   - which mysql_install_db
   - mysql_install_db --help || true
-
-  # XXX
-  - cat `which mysql_install_db`
-  - sudo touch /usr/share/mysql/my-default.cnf
-  - mysql_install_db --datadir=/tmp/XXX2 --verbose
   
   - "make test-deps"
 script: "PROMISED_COMMAND_DEBUG=1 make test"
