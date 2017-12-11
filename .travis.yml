@@ -16,8 +16,8 @@ install:
   - mysql_install_db --help || true
 
   # XXX
-  - mkdir /tmp/abc
-  - touch /tmp/abc/my-default.cnf
+  - mkdir /tmp/abc/etc -p
+  - touch /tmp/abc/etc/my-default.cnf
   - mysql_install_db --defaults-file=/tmp/XXX1 --base-dir=/tmp/abc --datadir=/tmp/XXX2 --verbose
   
   - "make test-deps"
