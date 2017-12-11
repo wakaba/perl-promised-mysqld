@@ -12,6 +12,7 @@ use File::Temp;
 test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
+  $s->start_timeout (60);
   $s->start->then (sub {
     test {
       my $opts = $s->get_dsn_options;
@@ -38,6 +39,7 @@ test {
     my $cv = AE::cv;
     use Promised::Mysqld;
     my $s = Promised::Mysqld->new;
+    $s->start_timeout (60);
     $s->start->then (sub {
       print STDOUT "pid=", $s->{cmd}->pid, "\n";
       return $s->stop;
@@ -88,6 +90,7 @@ test {
 test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
+  $s->start_timeout (60);
   $s->start->then (sub {
     test {
       ok 1;
@@ -111,6 +114,7 @@ test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
   local $ENV{PROMISED_MYSQLD_DEBUG} = 1;
+  $s->start_timeout (60);
   $s->start->then (sub {
     test {
       ok 1;
@@ -135,14 +139,21 @@ test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
   my $temp = File::Temp->newdir;
-  my $db_dir = path ($temp)->child ('local/test/test-db-dir' . $$ . rand);
+  my $db_dir = path ($temp)->child ('local/test/dbdir/' . $$ . int rand 1000);
   $s->set_db_dir ($db_dir);
+  $s->start_timeout (60);
   $s->start->then (sub {
     test {
       ok 1;
     } $c;
     return $s->stop;
-  }, sub { my $e = $_[0]; test { ok 0, $e } $c })->then (sub {
+  }, sub {
+    my $error = $_[0];
+    test {
+      ok 0;
+      is $error, undef;
+    } $c, name => 'No exception expected';
+  })->then (sub {
     my $dir = Promised::File->new_from_path ($s->{db_dir} || die);
     test {
       is path ($s->{db_dir})->absolute, $db_dir->absolute;
@@ -164,19 +175,20 @@ test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
   my $temp = File::Temp->new;
-  my $db_dir = path ($temp)->child ('local/test/test-db-dir' . $$ . rand);
+  my $db_dir = path ($temp)->child ('local/test/dbdir/' . $$ . int rand 1000);
   Promised::File->new_from_path ($db_dir)->write_byte_string ('')->then (sub {
     $s->set_db_dir ($db_dir);
+    $s->start_timeout (60);
     return $s->start;
   })->then (sub { test { ok 0 } $c }, sub {
     my $error = $_[0];
     test {
-      like $error, qr{\Q$db_dir\E};
-    } $c;
+      like $error, qr{\Q$db_dir\E}, $error;
+    } $c, name => 'Exception expected';
     return $s->stop;
   })->then (sub {
     test {
-      ok -f $db_dir;
+      ok -f $db_dir, 'it is still a file';
     } $c;
   })->then (sub {
     done $c;
@@ -200,7 +212,7 @@ run_tests;
 
 =head1 LICENSE
 
-Copyright 2015 Wakaba <wakaba@suikawiki.org>.
+Copyright 2015-2017 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
