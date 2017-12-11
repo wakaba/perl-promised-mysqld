@@ -134,7 +134,10 @@ sub _create_mysql_db ($) {
       print STDERR $_[0];
       $stderr .= $_[0];
     });
-    return $cmd->run->then (sub { $cmd->wait })->then (sub {
+    return $cmd->run->then (sub { $cmd->wait })->catch (sub {
+      return $_[0] if UNIVERSAL::isa ($_[0], 'Promised::Command::Result');
+      die $_[0];
+    })->then (sub {
       if ($with_insecure and
           ($stdout =~ /unknown option '--insecure'/ or
            $stderr =~ /unknown option '--insecure'/)) {

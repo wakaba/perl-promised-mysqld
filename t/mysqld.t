@@ -26,7 +26,7 @@ test {
       is $s->get_dsn_string (dbname => 'myapp', user => 'foo', password => 'bar'), "DBI:mysql:dbname=myapp;mysql_socket=$opts->{mysql_socket};password=bar;user=foo";
     } $c;
     return $s->stop;
-  }, sub { test { ok 0 } $c })->then (sub {
+  }, sub { my $e = $_[0]; test { ok 0, $e } $c })->then (sub {
     done $c;
     undef $c;
   });
