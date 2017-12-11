@@ -16,6 +16,7 @@ install:
   - mysql_install_db --help || true
 
   # XXX
+  - cat `which mysql_install_db`
   - mysql_install_db --datadir=/tmp/XXX2 --verbose
   
   - "make test-deps"
