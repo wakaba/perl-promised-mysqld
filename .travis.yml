@@ -14,6 +14,11 @@ install:
   - mysqld --version
   - which mysql_install_db
   - mysql_install_db --help || true
+
+  # XXX
+  - mysql_install_db --defaults-file=/tmp/XXX0
+  - mysql_install_db --defaults-file=/tmp/XXX1 --basedir=/usr --datadir=/tmp/XXX2 --verbose
+  
   - "make test-deps"
 script: "PROMISED_COMMAND_DEBUG=1 make test"
 notifications:
