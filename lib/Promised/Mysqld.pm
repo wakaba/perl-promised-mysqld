@@ -107,6 +107,7 @@ sub _create_mysql_db ($) {
   $base_dir =~ s{[^/]+\z}{};
   $base_dir =~ s{[^/]*/\z}{} or $base_dir =~ s{/?\z}{/..};
   $base_dir =~ s{(?!^)/\z}{};
+  my $temp;
   my $run; $run = sub {
     my $with_insecure = shift;
     my $cmd = Promised::Command->new ([
@@ -139,6 +140,29 @@ sub _create_mysql_db ($) {
            $stderr =~ /unknown option '--insecure'/)) {
         warn "Retry |mysql_install_db| without |--insecure| option...\n";
         return $run->(0);
+      }
+      if (not defined $temp and
+          ($stdout =~ /FATAL ERROR: Could not find my-default.cnf/ or
+           $stderr =~ /FATAL ERROR: Could not find my-default.cnf/)) {
+        $temp = File::Temp->newdir;
+        return Promised::File->new_from_path ("$temp/my-default.cnf")->write_byte_string ('')->then (sub {
+          my $abs_base_dir = abs_path $base_dir;
+          my $ln = sub {
+            my $cmd = Promised::Command->new
+                (['ln', '-s', "$abs_base_dir/sbin"]);
+            $cmd->wd ($temp);
+            return $cmd->wait;
+          }; # $ln
+          return Promise->all ([
+            $ln->("bin"),
+            $ln->("sbin"),
+            $ln->("share"),
+          ]);
+        })->then (sub {
+          warn "Retrying with virtual basedir |$temp| (instead of |$base_dir|)...\n";
+          $base_dir = $temp;
+          return $run->($with_insecure);
+        });
       }
       unless ($_[0]->is_success and $_[0]->exit_code == 0) {
         die "|mysql_install_db| failed: $_[0]";
