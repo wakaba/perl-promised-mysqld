@@ -149,9 +149,14 @@ sub _create_mysql_db ($) {
           my $abs_base_dir = abs_path $base_dir;
           my $ln = sub {
             my $cmd = Promised::Command->new
-                (['ln', '-s', "$abs_base_dir/sbin"]);
+                (['ln', '-s', "$abs_base_dir/$_[0]"]);
             $cmd->wd ($temp);
-            return $cmd->wait;
+            return $cmd->run->then (sub {
+              return $cmd->wait;
+            })->then (sub {
+              my $result = $_[0];
+              die $result unless $result->exit_code == 0;
+            });
           }; # $ln
           return Promise->all ([
             $ln->("bin"),
