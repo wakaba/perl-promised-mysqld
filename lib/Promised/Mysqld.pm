@@ -121,18 +121,14 @@ sub _create_mysql_db ($) {
     ## might depend on system's Perl XS modules.
     $cmd->envs->{PERL5LIB} = '';
     $cmd->envs->{PERL5OPT} = '';
-    my $no_insecure;
     if ($with_insecure) {
       $cmd->stderr (sub {
         print STDERR $_[0];
-        if ($_[0] =~ /unknown option '--insecure'/) {
-          $no_insecure = 1;
-        }
       });
     }
     return $cmd->run->then (sub { $cmd->wait })->then (sub {
       unless ($_[0]->is_success and $_[0]->exit_code == 0) {
-        if ($no_insecure) {
+        if ($with_insecure) {
           return $run->(0);
         }
         die "|mysql_install_db| failed: $_[0]";
