@@ -17,7 +17,7 @@ install:
 
   # XXX
   - cat `which mysql_install_db`
-  - touch /usr/share/mysql/my-default.cnf
+  - sudo touch /usr/share/mysql/my-default.cnf
   - mysql_install_db --datadir=/tmp/XXX2 --verbose
   
   - "make test-deps"
