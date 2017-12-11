@@ -13,7 +13,7 @@ install:
   - which mysqld
   - mysqld --version
   - which mysql_install_db
-  - mysql_install_db --help
+  - mysql_install_db --help || true
   - "make test-deps"
 script: "PROMISED_COMMAND_DEBUG=1 make test"
 notifications:
