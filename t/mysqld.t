@@ -7,6 +7,7 @@ use Test::X1;
 use Promised::Mysqld;
 use Promised::Command;
 use Promised::File;
+use File::Temp;
 
 test {
   my $c = shift;
@@ -133,14 +134,15 @@ test {
 test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
-  my $db_dir = path (__FILE__)->parent->parent->child ('local/test/test-db-dir' . $$ . rand);
+  my $temp = File::Temp->newdir;
+  my $db_dir = path ($temp)->child ('local/test/test-db-dir' . $$ . rand);
   $s->set_db_dir ($db_dir);
   $s->start->then (sub {
     test {
       ok 1;
     } $c;
     return $s->stop;
-  }, sub { test { ok 0 } $c })->then (sub {
+  }, sub { my $e = $_[0]; test { ok 0, $e } $c })->then (sub {
     my $dir = Promised::File->new_from_path ($s->{db_dir} || die);
     test {
       is path ($s->{db_dir})->absolute, $db_dir->absolute;
@@ -161,7 +163,8 @@ test {
 test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
-  my $db_dir = path (__FILE__)->parent->parent->child ('local/test/test-db-dir' . $$ . rand);
+  my $temp = File::Temp->new;
+  my $db_dir = path ($temp)->child ('local/test/test-db-dir' . $$ . rand);
   Promised::File->new_from_path ($db_dir)->write_byte_string ('')->then (sub {
     $s->set_db_dir ($db_dir);
     return $s->start;
