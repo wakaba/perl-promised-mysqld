@@ -16,6 +16,7 @@ install:
   - mysql_install_db --help || true
 
   # XXX
+  - find / | grep my-default
   - mysql_install_db --defaults-file=/tmp/XXX1 --basedir=/usr --datadir=/tmp/XXX2 --verbose
   
   - "make test-deps"
