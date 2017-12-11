@@ -16,9 +16,7 @@ install:
   - mysql_install_db --help || true
 
   # XXX
-  - mkdir /tmp/abc
-  - touch /tmp/abc/my-default.cnf
-  - mysql_install_db --defaults-file=/tmp/XXX1 --base-dir=/tmp/abc --datadir=/tmp/XXX2 --verbose
+  - mysql_install_db --defaults-file=/tmp/XXX1 --base-dir=/usr --keep-my-cnf --datadir=/tmp/XXX2 --verbose
   
   - "make test-deps"
 script: "PROMISED_COMMAND_DEBUG=1 make test"
