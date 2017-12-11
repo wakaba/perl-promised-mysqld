@@ -16,7 +16,7 @@ install:
   - mysql_install_db --help || true
 
   # XXX
-  - mysql_install_db --no-defaults --datadir=/tmp/XXX2 --verbose
+  - mysql_install_db --datadir=/tmp/XXX2 --verbose
   
   - "make test-deps"
 script: "PROMISED_COMMAND_DEBUG=1 make test"
