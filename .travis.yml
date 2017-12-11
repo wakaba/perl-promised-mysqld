@@ -10,6 +10,10 @@ os:
   - osx
 before_install: git submodule update --init
 install:
+  - which mysqld
+  - mysqld --version
+  - which mysql_install_db
+  - mysql_install_db --help
   - "make test-deps"
 script: "PROMISED_COMMAND_DEBUG=1 make test"
 notifications:
