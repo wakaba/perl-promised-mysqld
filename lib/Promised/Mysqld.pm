@@ -121,18 +121,22 @@ sub _create_mysql_db ($) {
     ## might depend on system's Perl XS modules.
     $cmd->envs->{PERL5LIB} = '';
     $cmd->envs->{PERL5OPT} = '';
-    my $no_insecure;
-    if ($with_insecure) {
-      $cmd->stderr (sub {
-        return unless defined $_[0];
-        print STDERR $_[0];
-        if ($_[0] =~ /unknown option '--insecure'/) {
-          $no_insecure = 1;
-        }
-      });
-    }
+    my $stdout = '';
+    my $stderr = '';
+    $cmd->stdout (sub {
+      return unless defined $_[0];
+      print STDERR $_[0];
+      $stdout .= $_[0];
+    });
+    $cmd->stderr (sub {
+      return unless defined $_[0];
+      print STDERR $_[0];
+      $stderr .= $_[0];
+    });
     return $cmd->run->then (sub { $cmd->wait })->then (sub {
-      if ($no_insecure) {
+      if ($with_insecure and
+          ($stdout =~ /unknown option '--insecure'/ or
+           $stderr =~ /unknown option '--insecure'/)) {
         warn "Retry |mysql_install_db| without |--insecure| option...\n";
         return $run->(0);
       }
