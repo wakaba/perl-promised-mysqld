@@ -10,9 +10,9 @@ os:
   - osx
 before_install: git submodule update --init
 install:
-  - which mysqld
-  - mysqld --version
-  - which mysql_install_db
+  - which mysqld || true
+  - mysqld --version || true
+  - which mysql_install_db || true
   - mysql_install_db --help || true
   
   - "make test-deps"
