@@ -156,7 +156,7 @@ test {
   })->then (sub {
     my $dir = Promised::File->new_from_path ($s->{db_dir} || die);
     test {
-      is path ($s->{db_dir})->absolute, $db_dir->absolute;
+      is path ($s->{db_dir})->realpath, $db_dir->realpath;
     } $c;
     return $dir->is_directory->then (sub {
       my $result = $_[0];
