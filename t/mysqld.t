@@ -139,7 +139,7 @@ test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
   my $temp = File::Temp->newdir;
-  my $db_dir = path ($temp)->child ('local/test/dbdir/' . $$ . int rand 1000);
+  my $db_dir = path ($temp)->child ('test-' . $$ . int rand 1000);
   $s->set_db_dir ($db_dir);
   $s->start_timeout (60);
   $s->start->then (sub {
@@ -175,7 +175,7 @@ test {
   my $c = shift;
   my $s = Promised::Mysqld->new;
   my $temp = File::Temp->new;
-  my $db_dir = path ($temp)->child ('local/test/dbdir/' . $$ . int rand 1000);
+  my $db_dir = path ($temp)->child ('test-' . $$ . int rand 1000);
   Promised::File->new_from_path ($db_dir)->write_byte_string ('')->then (sub {
     $s->set_db_dir ($db_dir);
     $s->start_timeout (60);
