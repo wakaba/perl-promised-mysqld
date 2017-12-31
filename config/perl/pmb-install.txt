@@ -1,7 +1,7 @@
-AnyEvent::Util
+AnyEvent~7.14
 Carp~1.38
 Cwd~3.62
-Digest::SHA~6.00
+Digest::SHA~6.01
 File::Path~2.15
 File::Temp~0.2304
 Filter::Util::Call~1.58
