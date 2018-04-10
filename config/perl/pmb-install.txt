@@ -1,4 +1,4 @@
-AnyEvent::Handle
+AnyEvent::Util
 Carp~1.38
 Cwd~3.74
 Digest::SHA~6.01
