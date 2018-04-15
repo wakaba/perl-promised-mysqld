@@ -1,4 +1,4 @@
-AnyEvent::IO
+AnyEvent~7.14
 Carp~1.38
 Cwd~3.74
 Digest::SHA~6.01
