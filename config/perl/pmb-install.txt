@@ -1,5 +1,5 @@
 AnyEvent::Util
-Carp~1.38
+Carp~1.50
 Cwd~3.75
 Digest::SHA~6.02
 File::Path~2.16
