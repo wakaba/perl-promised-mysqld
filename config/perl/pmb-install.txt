@@ -11,7 +11,7 @@ Filter::Util::Call~1.60
 Method::WeakCallback~0.04
 Net::SSLeay~1.90
 Path::Tiny~0.118
-Scalar::Util~1.55
+Scalar::Util~1.56
 Term::ANSIColor~5.01
-Test::Builder~1.302183
+Test::More~1.302185
 Time::HiRes~1.9764
